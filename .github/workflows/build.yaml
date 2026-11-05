@@ -1,0 +1,66 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.platform }} / ${{ matrix.configuration }}
+    runs-on: windows-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [x86, x64]
+        configuration: [Debug, Release]
+        include:
+          - platform: x86
+            output-platform: Win32
+          - platform: x64
+            output-platform: x64
+
+    steps:
+      - name: Check out sources and submodules
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v3
+        with:
+          msbuild-architecture: x64
+
+      - name: Build solution
+        shell: pwsh
+        run: >-
+          msbuild no-defender.sln
+          /m
+          /t:Build
+          /p:Configuration=${{ matrix.configuration }}
+          /p:Platform=${{ matrix.platform }}
+
+      - name: Stage binaries
+        shell: pwsh
+        env:
+          OUTPUT_PLATFORM: ${{ matrix.output-platform }}
+        run: |
+          $output = Join-Path 'bin' $env:OUTPUT_PLATFORM
+          New-Item -ItemType Directory -Path 'artifacts' | Out-Null
+          foreach ($file in @('no-defender-loader.exe', 'powrprof.dll', 'wsc.dll', 'wsc_proxy.exe')) {
+            Copy-Item -LiteralPath (Join-Path $output $file) -Destination 'artifacts' -ErrorAction Stop
+          }
+          Copy-Item -Path "$output/*.pdb" -Destination 'artifacts' -ErrorAction Stop
+          Copy-Item -LiteralPath 'README.md', 'LICENSE' -Destination 'artifacts' -ErrorAction Stop
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v7
+        with:
+          name: no-defender-${{ matrix.platform }}-${{ matrix.configuration }}
+          path: artifacts/
+          if-no-files-found: error
