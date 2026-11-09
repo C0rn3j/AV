@@ -1,18 +1,22 @@
-# no-defender
+TODO fully port to the new repo instead of this DMCAable mess
 
-A slightly more fun way to disable windows defender.
+# AV
+
+Disable Windows Defender and everything around it, this is effectively a "pointless" fork of the [original repo](https://github.com/es3n1n/defendnot) which you should use, I just want to build my own binaries.
 
 ![](./images/Security.png)
 
 ## How it works
 
-There's a WSC (Windows Security Center) service in Windows which is used by antiviruses to let Windows know that there's some other antivirus in the hood and it should disable Windows Defender.</br>
-This WSC API is undocumented and furthermore requires people to sign an NDA with Microsoft to get its documentation, so I decided to take an interesting approach for such a thing and used an already existing antivirus called Avast. This AV engine includes a so-called `wsc_proxy.exe` service, which essentially sets up the WSC API for Avast.</br>
-With a little bit of reverse engineering, I turned this service into a service that could add my own stuff there.
+There's a WSC (Windows Security Center) service in Windows which is used by antiviruses to let Windows know that there's some other antivirus in the hood and it should disable Windows Defender.
+
+This WSC API is undocumented and furthermore requires people to sign an NDA with Microsoft to get its documentation.
+
+With a little bit of reverse engineering of a real AV's WSC implementation, it got turned into a service that can add your own AV module.
 
 ## Limitations
 
-Sadly, to keep this WSC stuff even after reboot, no-defender adds itself (not really itself but rather Avast's module) to the autorun. Thus, you would need to keep the no-defender binaries on your disk :(
+To keep this WSC stuff even after reboot, the project adds itself (not really itself, but rather a real AV's module) to the autorun. Thus, you need to keep the binaries on your disk.
 
 ## Usage
 ```commandline
